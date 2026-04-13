@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destiny Rewards | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // YOUR CONFIG DATA
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
+            authDomain: "destiny-rewards.firebaseapp.com",
+            databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
+            projectId: "destiny-rewards",
+            storageBucket: "destiny-rewards.firebasestorage.app",
+            messagingSenderId: "148315001010",
+            appId: "1:148315001010:web:a0db78324d7b730858f9ab"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Function to Sign Up
+        window.signUp = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const refBy = new URLSearchParams(window.location.search).get('ref') || "none";
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+                
+                // Create user profile in Database
+                await set(ref(db, 'users/' + user.uid), {
+                    email: email,
+                    balance: 0,
+                    referredBy: refBy,
+                    status: "active"
+                });
+
+                // Give ₦20 to the person who referred them
+                if (refBy !== "none") {
+                    const referrerRef = ref(db, 'users/' + refBy);
+                    const snapshot = await get(referrerRef);
+                    if (snapshot.exists()) {
+                        let currentRefBalance = snapshot.val().balance || 0;
+                        await set(ref(db, 'users/' + refBy + '/balance'), currentRefBalance + 20);
+                    }
+                }
+
+                alert("Account Created! Welcome to Destiny Rewards.");
+                window.location.href = "dashboard.html"; 
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+
+        // Function to Login
+        window.login = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+    </script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-6">
+    <div class="w-full max-w-md bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+        <h1 class="text-3xl font-bold text-blue-400 mb-2">Destiny Rewards</h1>
+        <p class="text-gray-400 mb-6 text-sm">Earn money by completing simple tasks.</p>
+        
+        <input type="email" id="email" placeholder="Email Address" class="w-full bg-gray-700 p-3 rounded-lg mb-4 outline-none border border-transparent focus:border-blue-500">
+        <input type="password" id="pass" placeholder="Password" class="w-full bg-gray-700 p-3 rounded-lg mb-6 outline-none border border-transparent focus:border-blue-500">
+        
+        <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg font-bold mb-4">Login</button>
+        <button onclick="signUp()" class="w-full border border-gray-600 hover:bg-gray-700 p-3 rounded-lg font-bold">Create Account</button>
+        
+        <p class="mt-6 text-center text-xs text-gray-500">Minimum withdrawal: ₦100</p>
+    </div>
+</body>
+</html>

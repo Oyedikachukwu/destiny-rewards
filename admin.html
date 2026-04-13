@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Panel | Destiny Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+
+    <h1 class="text-2xl font-bold text-blue-400 mb-6">Destiny's Control Center</h1>
+
+    <section class="bg-gray-800 p-6 rounded-2xl mb-8 border border-blue-900">
+        <h2 class="text-lg font-bold mb-4">Post New Task</h2>
+        <input type="text" id="taskTitle" placeholder="Task Name (e.g. Follow on IG)" class="w-full bg-gray-700 p-3 rounded-lg mb-3 outline-none">
+        <input type="number" id="taskPrice" placeholder="Price in Naira (e.g. 10)" class="w-full bg-gray-700 p-3 rounded-lg mb-3 outline-none">
+        <button onclick="addTask()" class="w-full bg-blue-600 p-3 rounded-lg font-bold">Post Task to Website</button>
+    </section>
+
+    <section class="mb-8">
+        <h2 class="text-lg font-bold mb-4 text-yellow-500">Pending Reviews</h2>
+        <div id="adminReviewList" class="space-y-4 font-mono text-sm text-gray-400 italic">Loading submissions...</div>
+    </section>
+
+    <section>
+        <h2 class="text-lg font-bold mb-4 text-green-500">Withdrawal Requests</h2>
+        <div id="adminWithdrawalList" class="space-y-4">No requests yet.</div>
+    </section>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
+            authDomain: "destiny-rewards.firebaseapp.com",
+            databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
+            projectId: "destiny-rewards",
+            storageBucket: "destiny-rewards.firebasestorage.app",
+            messagingSenderId: "148315001010",
+            appId: "1:148315001010:web:a0db78324d7b730858f9ab"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Function to post a task
+        window.addTask = () => {
+            const title = document.getElementById('taskTitle').value;
+            const price = document.getElementById('taskPrice').value;
+            if(title && price) {
+                const taskRef = push(ref(db, 'tasks'));
+                set(taskRef, { title: title, reward: price });
+                alert("Task Live!");
+                document.getElementById('taskTitle').value = "";
+                document.getElementById('taskPrice').value = "";
+            }
+        };
+
+        // Load submissions to review
+        onValue(ref(db, 'submissions'), (snapshot) => {
+            const users = snapshot.val();
+            const list = document.getElementById('adminReviewList');
+            list.innerHTML = "";
+            for (let uid in users) {
+                for (let taskId in users[uid]) {
+                    const sub = users[uid][taskId];
+                    if (sub.status === "pending") {
+                        list.innerHTML += `
+                            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                <p>User: ${sub.userEmail}</p>
+                                <p>Proof: <span class="text-white">${sub.proof}</span></p>
+                                <p>Reward: ₦${sub.reward}</p>
+                                <button onclick="approveTask('${uid}', '${taskId}', '${sub.reward}')" class="bg-green-600 px-4 py-1 rounded mt-2 mr-2">Approve</button>
+                                <button onclick="rejectTask('${uid}', '${taskId}')" class="bg-red-600 px-4 py-1 rounded mt-2">Reject</button>
+                            </div>
+                        `;
+                    }
+                }
+            }
+        });
+
+        window.approveTask = async (uid, taskId, reward) => {
+            // 1. Add money to user balance
+            const userRef = ref(db, 'users/' + uid + '/balance');
+            const snap = await get(userRef);
+            const currentBal = snap.val() || 0;
+            await set(userRef, currentBal + parseInt(reward));
+            
+            // 2. Remove submission from pending
+            await remove(ref(db, 'submissions/' + uid + '/' + taskId));
+            alert("Payment Approved!");
+        };
+
+        // Load withdrawals
+        onValue(ref(db, 'withdrawals'), (snapshot) => {
+            const container = document.getElementById('adminWithdrawalList');
+            container.innerHTML = "";
+            const data = snapshot.val();
+            for (let id in data) {
+                const w = data[id];
+                container.innerHTML += `
+                    <div class="bg-gray-800 p-4 rounded-xl border-l-4 border-green-500">
+                        <p class="text-xs text-gray-400">Amount: <span class="text-white font-bold text-lg">₦${w.amount}</span></p>
+                        <p class="text-xs">Bank: ${w.details}</p>
+                        <button onclick="markPaid('${id}')" class="bg-blue-600 text-[10px] px-3 py-1 rounded mt-2">Mark as Paid</button>
+                    </div>
+                `;
+            }
+        });
+
+        window.markPaid = (id) => {
+            remove(ref(db, 'withdrawals/' + id));
+            alert("Deleted from list. Make sure you sent the money!");
+        };
+    </script>
+</body>
+</html>

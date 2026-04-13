@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Destiny Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white pb-20">
+
+    <div class="p-6 text-center">
+        <div class="w-24 h-24 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold shadow-lg shadow-blue-900/50">
+            <i class="fas fa-user"></i>
+        </div>
+        <h2 id="userEmail" class="text-xl font-bold">Loading...</h2>
+        <p class="text-gray-500 text-sm">Member of Destiny Rewards</p>
+    </div>
+
+    <main class="px-6 space-y-4">
+        <a href="https://wa.me/YOUR_PHONE_NUMBER" class="flex items-center p-4 bg-gray-800 rounded-2xl border border-gray-700">
+            <i class="fab fa-whatsapp text-green-500 text-xl mr-4"></i>
+            <div>
+                <p class="font-bold">Contact Support</p>
+                <p class="text-xs text-gray-400">Chat with Destiny on WhatsApp</p>
+            </div>
+        </a>
+
+        <button onclick="resetPass()" class="w-full flex items-center p-4 bg-gray-800 rounded-2xl border border-gray-700">
+            <i class="fas fa-key text-yellow-500 text-xl mr-4"></i>
+            <div class="text-left">
+                <p class="font-bold">Reset Password</p>
+                <p class="text-xs text-gray-400">Get a reset link via email</p>
+            </div>
+        </button>
+
+        <button onclick="logout()" class="w-full flex items-center p-4 bg-red-900/20 rounded-2xl border border-red-900/50">
+            <i class="fas fa-sign-out-alt text-red-500 text-xl mr-4"></i>
+            <p class="font-bold text-red-500">Logout</p>
+        </button>
+    </main>
+
+    <nav class="fixed bottom-0 w-full bg-gray-800 border-t border-gray-700 flex justify-around p-4 text-gray-500">
+        <i class="fas fa-home text-xl" onclick="window.location.href='dashboard.html'"></i>
+        <i class="fas fa-history text-xl" onclick="window.location.href='history.html'"></i>
+        <i class="fas fa-user-circle text-xl text-blue-400"></i>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
+            authDomain: "destiny-rewards.firebaseapp.com",
+            databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
+            projectId: "destiny-rewards",
+            storageBucket: "destiny-rewards.firebasestorage.app",
+            messagingSenderId: "148315001010",
+            appId: "1:148315001010:web:a0db78324d7b730858f9ab"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('userEmail').innerText = user.email;
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        window.logout = () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        };
+
+        window.resetPass = () => {
+            sendPasswordResetEmail(auth, auth.currentUser.email)
+                .then(() => alert("Reset link sent to your email!"))
+                .catch((error) => alert(error.message));
+        };
+    </script>
+</body>
+</html>
