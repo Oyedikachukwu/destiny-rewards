@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw | Destiny Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white pb-24">
+
+    <div class="p-6 text-center bg-gray-800 border-b border-gray-700">
+        <h1 class="text-xl font-bold">Withdraw Funds</h1>
+        <p class="text-xs text-gray-400 mt-1">Transfer your earnings to your bank</p>
+    </div>
+
+    <main class="p-6 space-y-6">
+        <div class="bg-blue-900/20 border border-blue-500/30 p-6 rounded-3xl text-center">
+            <p class="text-xs text-blue-400 font-bold uppercase tracking-widest">Your Balance</p>
+            <h2 id="currentBalance" class="text-4xl font-black mt-2">₦0</h2>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Amount to Withdraw (Min ₦100)</label>
+                <input type="number" id="withdrawAmount" placeholder="e.g. 500" class="w-full bg-gray-800 border border-gray-700 p-4 rounded-2xl outline-none focus:border-blue-500 mt-1">
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Bank Name</label>
+                <input type="text" id="bankName" placeholder="e.g. OPay, Kuda, Zenith" class="w-full bg-gray-800 border border-gray-700 p-4 rounded-2xl outline-none focus:border-blue-500 mt-1">
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Account Number</label>
+                <input type="number" id="accountNumber" placeholder="10 Digits" class="w-full bg-gray-800 border border-gray-700 p-4 rounded-2xl outline-none focus:border-blue-500 mt-1">
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase ml-2">Account Holder Name</label>
+                <input type="text" id="accountName" placeholder="Your Full Name" class="w-full bg-gray-800 border border-gray-700 p-4 rounded-2xl outline-none focus:border-blue-500 mt-1">
+            </div>
+
+            <button onclick="processWithdrawal()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-black shadow-lg shadow-blue-900/30 transition uppercase">
+                Confirm Withdrawal
+            </button>
+        </div>
+
+        <p class="text-[10px] text-gray-500 text-center italic">Payments are processed within 24-48 hours. Ensure details are correct.</p>
+    </main>
+
+    <nav class="fixed bottom-0 w-full bg-gray-800 border-t border-gray-700 flex justify-around p-4">
+        <button onclick="window.location.href='dashboard.html'" class="text-gray-500 flex flex-col items-center"><i class="fas fa-tasks text-xl"></i><span class="text-[9px] mt-1">Tasks</span></button>
+        <button onclick="window.location.href='history.html'" class="text-gray-500 flex flex-col items-center"><i class="fas fa-history text-xl"></i><span class="text-[9px] mt-1">History</span></button>
+        <button onclick="window.location.href='profile.html'" class="text-gray-500 flex flex-col items-center"><i class="fas fa-user text-xl"></i><span class="text-[9px] mt-1">Profile</span></button>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, set, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
+            authDomain: "destiny-rewards.firebaseapp.com",
+            databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
+            projectId: "destiny-rewards",
+            storageBucket: "destiny-rewards.firebasestorage.app",
+            messagingSenderId: "148315001010",
+            appId: "1:148315001010:web:a0db78324d7b730858f9ab"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let userBalance = 0;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(ref(db, 'users/' + user.uid), (snap) => {
+                    userBalance = snap.val() ? snap.val().balance || 0 : 0;
+                    document.getElementById('currentBalance').innerText = "₦" + userBalance;
+                });
+            } else { window.location.href = "index.html"; }
+        });
+
+        window.processWithdrawal = async () => {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const bank = document.getElementById('bankName').value;
+            const account = document.getElementById('accountNumber').value;
+            const name = document.getElementById('accountName').value;
+
+            if (!amount || !bank || !account || !name) {
+                alert("Please fill in all details!");
+                return;
+            }
+
+            if (amount < 100) {
+                alert("Minimum withdrawal is ₦100");
+                return;
+            }
+
+            if (amount > userBalance) {
+                alert("Insufficient Balance! You only have ₦" + userBalance);
+                return;
+            }
+
+            const confirmProcess = confirm(`Withdraw ₦${amount} to ${bank}?`);
+            if (confirmProcess) {
+                const user = auth.currentUser;
+                const refW = push(ref(db, 'withdrawals'));
+                
+                await set(refW, {
+                    uid: user.uid,
+                    email: user.email,
+                    amount: amount,
+                    bank: bank,
+                    accountNumber: account,
+                    accountName: name,
+                    status: "pending",
+                    date: new Date().toLocaleDateString()
+                });
+
+                // Subtract ONLY the withdrawn amount from balance
+                const newBalance = userBalance - amount;
+                await set(ref(db, 'users/' + user.uid + '/balance'), newBalance);
+                
+                alert("Withdrawal Successful! Pending Approval.");
+                window.location.href = "dashboard.html";
+            }
+        };
+    </script>
+</body>
+</html>
+
