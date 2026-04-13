@@ -9,17 +9,24 @@
 </head>
 <body class="bg-gray-900 text-white pb-24">
 
-    <div id="tgLock" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center p-6 text-center">
+        <div id="tgLock" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center p-6 text-center">
         <div class="bg-gray-800 p-8 rounded-3xl border border-blue-500 shadow-2xl shadow-blue-900/20 max-w-sm w-full">
             <i class="fab fa-telegram text-6xl text-blue-400 mb-4"></i>
             <h2 class="text-2xl font-bold mb-2">Join Our Channel</h2>
-            <p class="text-gray-400 text-sm mb-6">To access your dashboard and start earning, you must join our official Telegram channel for updates.</p>
-            <a href="https://t.me/updatewithdestiny001" target="_blank" onclick="unlockSite()" class="block w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold mb-3 transition">
-                Join Channel Now
+            <p class="text-gray-400 text-sm mb-6">To access your dashboard and start earning, you must join our official Telegram channel.</p>
+            
+            <a href="https://t.me/updatewithdestiny001" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold mb-3 transition">
+                1. Join Channel Now
             </a>
-            <p class="text-[10px] text-gray-500 italic text-center">After joining, the dashboard will unlock.</p>
+
+            <button onclick="unlockSite()" class="block w-full border border-gray-600 hover:bg-gray-700 p-4 rounded-xl font-bold transition text-xs uppercase tracking-widest">
+                2. I Have Joined
+            </button>
+
+            <p class="text-[10px] text-gray-500 mt-4 italic text-center">Note: Looters will be banned permanently.</p>
         </div>
     </div>
+
 
     <div class="p-4 text-center">
         <p id="userEmail" class="text-xs text-gray-500 italic">Loading...</p>
