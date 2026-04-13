@@ -7,43 +7,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-white pb-20">
+<body class="bg-gray-900 text-white pb-24">
 
-    <div class="p-6 text-center">
-        <div class="w-24 h-24 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold shadow-lg shadow-blue-900/50">
+    <div class="p-8 text-center bg-gradient-to-b from-gray-800 to-gray-900 border-b border-gray-800">
+        <div class="w-24 h-24 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold shadow-xl shadow-blue-900/50 border-4 border-gray-700">
             <i class="fas fa-user"></i>
         </div>
         <h2 id="userEmail" class="text-xl font-bold">Loading...</h2>
-        <p class="text-gray-500 text-sm">Member of Destiny Rewards</p>
+        <p class="text-blue-400 text-xs font-bold uppercase tracking-widest mt-1">Active Member</p>
     </div>
 
-    <main class="px-6 space-y-4">
-        <a href="https://wa.me/YOUR_PHONE_NUMBER" class="flex items-center p-4 bg-gray-800 rounded-2xl border border-gray-700">
-            <i class="fab fa-whatsapp text-green-500 text-xl mr-4"></i>
-            <div>
-                <p class="font-bold">Contact Support</p>
-                <p class="text-xs text-gray-400">Chat with Destiny on WhatsApp</p>
+    <main class="p-6 space-y-4">
+        
+        <a href="https://t.me/D33446" target="_blank" class="flex items-center p-5 bg-gray-800 rounded-2xl border border-gray-700 hover:border-blue-500 transition shadow-lg">
+            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mr-4">
+                <i class="fab fa-telegram text-blue-400 text-2xl"></i>
             </div>
+            <div class="flex-1">
+                <p class="font-bold">Contact Support</p>
+                <p class="text-[10px] text-gray-500 uppercase font-black">Chat with @D33446</p>
+            </div>
+            <i class="fas fa-chevron-right text-gray-600 text-xs"></i>
         </a>
 
-        <button onclick="resetPass()" class="w-full flex items-center p-4 bg-gray-800 rounded-2xl border border-gray-700">
-            <i class="fas fa-key text-yellow-500 text-xl mr-4"></i>
-            <div class="text-left">
-                <p class="font-bold">Reset Password</p>
-                <p class="text-xs text-gray-400">Get a reset link via email</p>
+        <button onclick="resetPass()" class="w-full flex items-center p-5 bg-gray-800 rounded-2xl border border-gray-700 hover:border-yellow-500 transition shadow-lg">
+            <div class="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mr-4">
+                <i class="fas fa-key text-yellow-500 text-xl"></i>
             </div>
+            <div class="text-left flex-1">
+                <p class="font-bold">Reset Password</p>
+                <p class="text-[10px] text-gray-500 uppercase font-black">Get link via Email</p>
+            </div>
+            <i class="fas fa-chevron-right text-gray-600 text-xs"></i>
         </button>
 
-        <button onclick="logout()" class="w-full flex items-center p-4 bg-red-900/20 rounded-2xl border border-red-900/50">
-            <i class="fas fa-sign-out-alt text-red-500 text-xl mr-4"></i>
-            <p class="font-bold text-red-500">Logout</p>
+        <button onclick="logout()" class="w-full flex items-center p-5 bg-red-900/10 rounded-2xl border border-red-900/30 hover:bg-red-900/20 transition shadow-lg">
+            <div class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mr-4">
+                <i class="fas fa-sign-out-alt text-red-500 text-xl"></i>
+            </div>
+            <p class="font-bold text-red-500 flex-1 text-left">Logout</p>
         </button>
+
     </main>
 
-    <nav class="fixed bottom-0 w-full bg-gray-800 border-t border-gray-700 flex justify-around p-4 text-gray-500">
-        <i class="fas fa-home text-xl" onclick="window.location.href='dashboard.html'"></i>
-        <i class="fas fa-history text-xl" onclick="window.location.href='history.html'"></i>
-        <i class="fas fa-user-circle text-xl text-blue-400"></i>
+    <nav class="fixed bottom-0 w-full bg-gray-800 border-t border-gray-700 flex justify-around p-4 shadow-2xl">
+        <button onclick="window.location.href='dashboard.html'" class="flex flex-col items-center text-gray-500">
+            <i class="fas fa-tasks text-xl"></i>
+            <span class="text-[10px] mt-1 text-center">Tasks</span>
+        </button>
+        <button onclick="window.location.href='history.html'" class="flex flex-col items-center text-gray-500">
+            <i class="fas fa-history text-xl"></i>
+            <span class="text-[10px] mt-1 text-center">History</span>
+        </button>
+        <button class="flex flex-col items-center text-blue-500">
+            <i class="fas fa-user text-xl"></i>
+            <span class="text-[10px] mt-1 text-center">Profile</span>
+        </button>
     </nav>
 
     <script type="module">
@@ -72,12 +91,14 @@
         });
 
         window.logout = () => {
-            signOut(auth).then(() => window.location.href = "index.html");
+            if(confirm("Are you sure you want to logout?")) {
+                signOut(auth).then(() => window.location.href = "index.html");
+            }
         };
 
         window.resetPass = () => {
             sendPasswordResetEmail(auth, auth.currentUser.email)
-                .then(() => alert("Reset link sent to your email!"))
+                .then(() => alert("A password reset link has been sent to your email!"))
                 .catch((error) => alert(error.message));
         };
     </script>
