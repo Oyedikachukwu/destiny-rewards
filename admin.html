@@ -3,65 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Destiny Rewards - Admin Panel</title>
+    <title>Destiny Rewards Admin</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
-        .sidebar { width: 250px; height: 100vh; background: #2c3e50; color: white; position: fixed; padding-top: 20px; }
-        .sidebar button { width: 100%; padding: 15px; background: none; border: none; color: white; text-align: left; cursor: pointer; font-size: 16px; border-bottom: 1px solid #34495e; }
-        .sidebar button:hover { background: #34495e; }
-        .main-content { margin-left: 260px; padding: 20px; }
-        .section { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .active { display: block; }
-        input, select, button { display: block; width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
-        .btn-post { background: #27ae60; color: white; font-weight: bold; cursor: pointer; }
-        .btn-delete { background: #e74c3c; color: white; width: auto; padding: 5px 10px; }
-        .card { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+        
+        /* Mobile Friendly Header Menu */
+        .admin-nav { 
+            background: #2c3e50; 
+            display: flex; 
+            overflow-x: auto; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+        }
+        .admin-nav button {
+            flex: 0 0 auto;
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .admin-nav button.active-btn { background: #34495e; border-bottom: 3px solid #27ae60; }
+
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        
+        .section { display: none; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .active-section { display: block; }
+
+        h2 { margin-top: 0; color: #333; font-size: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        
+        .btn-main { background: #27ae60; color: white; border: none; width: 100%; padding: 15px; border-radius: 5px; font-weight: bold; font-size: 16px; }
+        .card { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .btn-red { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <h2 style="text-align: center;">Admin Hub</h2>
-    <button onclick="showSection('post-section')">➕ Post New Task</button>
-    <button onclick="showSection('manage-section')">⚙️ Manage Tasks</button>
-    <button onclick="showSection('approval-section')">✅ Task Approvals</button>
-    <button onclick="showSection('withdrawal-section')">💰 Withdrawals</button>
+<div class="admin-nav">
+    <button id="btn1" class="active-btn" onclick="openTab('post-task', 'btn1')">➕ Post</button>
+    <button id="btn2" onclick="openTab('manage-tasks', 'btn2')">⚙️ Manage</button>
+    <button id="btn3" onclick="openTab('approvals', 'btn3')">✅ Approvals</button>
+    <button id="btn4" onclick="openTab('withdrawals', 'btn4')">💰 Payouts</button>
 </div>
 
-<div class="main-content">
-    
-    <div id="post-section" class="section active">
-        <h2>Post a New Task</h2>
-        <input type="text" id="taskName" placeholder="Task Title (e.g. Subscribe to YouTube)">
-        <input type="url" id="taskLink" placeholder="URL Link">
-        <input type="number" id="taskReward" placeholder="Reward Amount (e.g. 0.50)">
-        <input type="number" id="taskLimit" placeholder="Max participants (e.g. 100)">
-        <button class="btn-post" onclick="uploadTask()">Publish Task</button>
+<div class="container">
+    <div id="post-task" class="section active-section">
+        <h2>Post New Task</h2>
+        <label>Task Name</label>
+        <input type="text" id="tName" placeholder="e.g. Subscribe to YouTube">
+        
+        <label>Link/URL</label>
+        <input type="url" id="tLink" placeholder="https://...">
+        
+        <label>Reward Amount</label>
+        <input type="number" id="tReward" placeholder="0.50">
+        
+        <label>Max Persons (Limit)</label>
+        <input type="number" id="tLimit" placeholder="100">
+        
+        <button class="btn-main" onclick="saveTask()">Publish Task</button>
     </div>
 
-    <div id="manage-section" class="section">
+    <div id="manage-tasks" class="section">
         <h2>Active Tasks</h2>
-        <p>Total users allowed vs. users completed.</p>
-        <div id="taskList">Loading tasks...</div>
+        <div id="taskList">Loading...</div>
     </div>
 
-    <div id="approval-section" class="section">
-        <h2>Pending Proofs</h2>
-        <div id="approvalList">No pending tasks to approve.</div>
+    <div id="approvals" class="section">
+        <h2>Task Approvals</h2>
+        <div id="approvalList">No pending tasks.</div>
     </div>
 
-    <div id="withdrawal-section" class="section">
+    <div id="withdrawals" class="section">
         <h2>Withdrawal Requests</h2>
-        <div id="withdrawalList">No pending withdrawals.</div>
+        <div id="withdrawalList">No pending requests.</div>
     </div>
-
 </div>
 
 <script>
-    // --- FIREBASE CONFIG (REPLACE WITH YOUR ACTUAL KEYS) ---
+    // --- 1. CONFIG (Paste your Firebase info here) ---
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -73,80 +102,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- NAVIGATION LOGIC ---
-    function showSection(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+    // --- 2. TAB LOGIC ---
+    function openTab(sectionId, btnId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+        document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active-btn'));
+        document.getElementById(sectionId).classList.add('active-section');
+        document.getElementById(btnId).classList.add('active-btn');
     }
 
-    // --- TASK POSTING LOGIC ---
-    function uploadTask() {
-        const name = document.getElementById('taskName').value;
-        const link = document.getElementById('taskLink').value;
-        const reward = document.getElementById('taskReward').value;
-        const limit = document.getElementById('taskLimit').value;
-
-        if(!name || !link || !reward || !limit) return alert("Fill everything!");
-
-        db.collection("tasks").add({
-            name: name,
-            link: link,
-            reward: parseFloat(reward),
-            limit: parseInt(limit),
-            completedCount: 0,
-            active: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            alert("Success! Task is live.");
-            document.querySelectorAll('input').forEach(i => i.value = "");
-        });
-    }
-
-    // --- REAL-TIME TASK MANAGER ---
-    db.collection("tasks").orderBy("createdAt", "desc").onSnapshot(snapshot => {
-        const list = document.getElementById('taskList');
-        list.innerHTML = "";
-        snapshot.forEach(doc => {
-            const t = doc.data();
-            list.innerHTML += `
-                <div class="card">
-                    <div>
-                        <strong>${t.name}</strong><br>
-                        Limit: ${t.completedCount} / ${t.limit} users
-                    </div>
-                    <button class="btn-delete" onclick="deleteTask('${doc.id}')">Remove</button>
-                </div>
-            `;
-        });
-    });
-
-    function deleteTask(id) {
-        if(confirm("Delete this task?")) {
-            db.collection("tasks").doc(id).delete();
-        }
-    }
-
-    // --- PULL APPROVALS & WITHDRAWALS ---
-    // (These will look for documents in your 'submissions' and 'payouts' collections)
-    db.collection("submissions").where("status", "==", "pending").onSnapshot(snap => {
-        const list = document.getElementById('approvalList');
-        list.innerHTML = snap.empty ? "All caught up!" : "";
-        snap.forEach(doc => {
-            const s = doc.data();
-            list.innerHTML += `
-                <div class="card">
-                    <span>User: ${s.userId} - Task: ${s.taskName}</span>
-                    <button onclick="updateStatus('submissions', '${doc.id}', 'approved')">Approve</button>
-                </div>
-            `;
-        });
-    });
-
-    function updateStatus(col, id, status) {
-        db.collection(col).doc(id).update({ status: status });
-    }
-
-</script>
-</body>
-</html>
-
+    // --- 3. SAVE
+    
