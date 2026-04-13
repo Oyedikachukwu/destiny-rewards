@@ -10,25 +10,26 @@
 <body class="bg-gray-100 text-gray-900 pb-20">
 
     <div class="bg-[#1a2a3a] text-white p-6 text-center shadow-lg">
-        <h1 class="text-xl font-bold tracking-tighter uppercase">Destiny Admin Panel</h1>
+        <h1 class="text-xl font-bold uppercase">Destiny Admin Panel</h1>
     </div>
 
     <div class="flex bg-[#243b55] sticky top-0 z-50 shadow-md">
-        <button onclick="showTab('post')" class="flex-1 p-4 text-xs font-bold text-blue-300 border-b-2 border-transparent active-tab" id="btn-post">POST</button>
-        <button onclick="showTab('manage')" class="flex-1 p-4 text-xs font-bold text-gray-400" id="btn-manage">TASKS</button>
-        <button onclick="showTab('approvals')" class="flex-1 p-4 text-xs font-bold text-gray-400" id="btn-approvals">APPROVALS</button>
-        <button onclick="showTab('payouts')" class="flex-1 p-4 text-xs font-bold text-gray-400" id="btn-payouts">PAYOUTS</button>
+        <button onclick="showTab('post')" class="flex-1 p-4 text-[10px] font-bold text-blue-300 active-tab" id="btn-post">POST</button>
+        <button onclick="showTab('manage')" class="flex-1 p-4 text-[10px] font-bold text-gray-400" id="btn-manage">TASKS</button>
+        <button onclick="showTab('approvals')" class="flex-1 p-4 text-[10px] font-bold text-gray-400" id="btn-approvals">APPROVALS</button>
+        <button onclick="showTab('payouts')" class="flex-1 p-4 text-[10px] font-bold text-gray-400" id="btn-payouts">PAYOUTS</button>
     </div>
 
     <div class="max-w-md mx-auto p-4">
         <div id="post" class="tab-content block">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h2 class="font-bold mb-4 text-gray-700">Create New Task</h2>
+            <div class="bg-white p-6 rounded-2xl border shadow-sm">
+                <h2 class="font-bold mb-4">Create New Task</h2>
                 <div class="space-y-3">
                     <input type="text" id="tName" placeholder="Task Name" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
-                    <input type="text" id="tLink" placeholder="Task URL (https://...)" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
+                    <input type="text" id="tLink" placeholder="Task URL" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
                     <input type="number" id="tPrice" placeholder="Reward Amount" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
-                    <button onclick="postTask()" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold shadow-lg shadow-green-200">Publish Task</button>
+                    <input type="number" id="tLimit" placeholder="How many people? (e.g. 100)" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
+                    <button onclick="postTask()" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold uppercase">Publish Task</button>
                 </div>
             </div>
         </div>
@@ -38,18 +39,12 @@
             <div id="taskList" class="space-y-3"></div>
         </div>
 
-        <div id="approvals" class="tab-content hidden">
-            <h2 class="font-bold mb-4">Task Submissions</h2>
-            <div id="approvalsList" class="space-y-4"></div>
-        </div>
+        <div id="approvals" class="tab-content hidden"><div id="approvalsList" class="space-y-4"></div></div>
 
-        <div id="payouts" class="tab-content hidden">
-            <h2 class="font-bold mb-4">Withdrawal Requests</h2>
-            <div id="payoutsList" class="space-y-4"></div>
-        </div>
+        <div id="payouts" class="tab-content hidden"><div id="payoutsList" class="space-y-4"></div></div>
     </div>
 
-    <style>.active-tab { border-bottom-color: #2ecc71; color: white !important; }</style>
+    <style>.active-tab { border-bottom: 2px solid #2ecc71; color: white !important; }</style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -70,8 +65,7 @@
 
         window.showTab = (id) => {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.replace('block', 'hidden'));
-            const buttons = ['post', 'manage', 'approvals', 'payouts'];
-            buttons.forEach(b => document.getElementById('btn-'+b).classList.remove('active-tab'));
+            ['post', 'manage', 'approvals', 'payouts'].forEach(b => document.getElementById('btn-'+b).classList.remove('active-tab'));
             document.getElementById(id).classList.replace('hidden', 'block');
             document.getElementById('btn-'+id).classList.add('active-tab');
         };
@@ -80,10 +74,11 @@
             const title = document.getElementById('tName').value;
             const link = document.getElementById('tLink').value;
             const reward = document.getElementById('tPrice').value;
-            if(title && link && reward) {
+            const limit = document.getElementById('tLimit').value;
+            if(title && link && reward && limit) {
                 const newRef = push(ref(db, 'tasks'));
-                set(newRef, { title, link, reward, status: "active" }).then(() => {
-                    alert("Task Live!");
+                set(newRef, { title, link, reward, limit: parseInt(limit), completed: 0 }).then(() => {
+                    alert("Task Posted!");
                     location.reload();
                 });
             }
@@ -94,29 +89,32 @@
             list.innerHTML = "";
             const data = snap.val();
             for(let id in data) {
-                list.innerHTML += `<div class="bg-white p-4 rounded-xl flex justify-between shadow-sm mb-2 border">
-                    <span>${data[id].title} (₦${data[id].reward})</span>
-                    <button onclick="delTask('${id}')" class="text-red-500 font-bold">Delete</button>
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border mb-2">
+                    <div class="flex justify-between">
+                        <span class="font-bold">${data[id].title}</span>
+                        <button onclick="delTask('${id}')" class="text-red-500 font-bold">Delete</button>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2">Completed: ${data[id].completed || 0} / ${data[id].limit}</p>
                 </div>`;
             }
         });
 
         window.delTask = (id) => { if(confirm("Delete?")) remove(ref(db, 'tasks/' + id)); };
 
-        // APPROVE TASK PROOF
+        // APPROVALS
         onValue(ref(db, 'submissions'), (snap) => {
             const list = document.getElementById('approvalsList');
             list.innerHTML = "";
             const users = snap.val();
-            if(!users) { list.innerHTML = "No submissions."; return; }
+            if(!users) return;
             for(let uid in users) {
                 for(let tid in users[uid]) {
                     const s = users[uid][tid];
                     if(s.status === "pending") {
                         list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-blue-500">
                             <p class="text-xs text-gray-400">${s.userEmail}</p>
-                            <p class="font-bold">Proof: ${s.proof}</p>
-                            <button onclick="payUser('${uid}', '${tid}', '${s.reward}')" class="w-full bg-blue-600 text-white p-2 rounded-lg mt-2 font-bold">Approve & Pay</button>
+                            <p class="font-bold text-sm">Proof: ${s.proof}</p>
+                            <button onclick="payUser('${uid}', '${tid}', '${s.reward}')" class="w-full bg-blue-600 text-white p-2 rounded-lg mt-2 font-bold uppercase text-xs">Approve & Pay</button>
                         </div>`;
                     }
                 }
@@ -127,36 +125,40 @@
             const balanceRef = ref(db, `users/${uid}/balance`);
             const snap = await get(balanceRef);
             const current = snap.val() || 0;
+            
+            // 1. Pay user 2. Update status 3. Update global task counter
             await update(ref(db, `users/${uid}`), { balance: current + parseFloat(reward) });
             await update(ref(db, `submissions/${uid}/${tid}`), { status: "approved" });
-            alert("User Paid!");
+            
+            // Increment completion count
+            const taskCountRef = ref(db, `tasks/${tid}/completed`);
+            const countSnap = await get(taskCountRef);
+            await set(taskCountRef, (countSnap.val() || 0) + 1);
+
+            alert("Approved!");
         };
 
-        // APPROVE PAYOUT (BANK DETAILS)
+        // PAYOUTS (Same as previous version)
         onValue(ref(db, 'withdrawals'), (snap) => {
             const list = document.getElementById('payoutsList');
             list.innerHTML = "";
             const data = snap.val();
-            if(!data) { list.innerHTML = "No requests."; return; }
+            if(!data) return;
             for(let id in data) {
                 const w = data[id];
                 if(w.status === "pending") {
                     list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-green-500">
                         <p class="text-xl font-black text-green-600">₦${w.amount}</p>
-                        <p class="text-xs"><strong>Bank:</strong> ${w.bank}</p>
-                        <p class="text-xs"><strong>Acc:</strong> ${w.accountNumber}</p>
-                        <p class="text-xs"><strong>Holder:</strong> ${w.accountName}</p>
-                        <button onclick="markPaid('${id}')" class="w-full bg-green-600 text-white p-2 rounded-lg mt-2 font-bold">Confirm Paid</button>
+                        <p class="text-[10px]"><strong>Bank:</strong> ${w.bank} | <strong>Acc:</strong> ${w.accountNumber}</p>
+                        <p class="text-[10px]"><strong>Name:</strong> ${w.accountName}</p>
+                        <button onclick="markPaid('${id}')" class="w-full bg-green-600 text-white p-2 rounded-lg mt-2 font-bold uppercase text-xs">Confirm Paid</button>
                     </div>`;
                 }
             }
         });
 
         window.markPaid = (id) => {
-            if(confirm("Confirm Manual Transfer?")) {
-                update(ref(db, `withdrawals/${id}`), { status: "approved" });
-                alert("Withdrawal Approved!");
-            }
+            if(confirm("Confirm Paid?")) update(ref(db, `withdrawals/${id}`), { status: "approved" });
         };
     </script>
 </body>
