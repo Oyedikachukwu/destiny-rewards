@@ -10,12 +10,40 @@
 
     <h1 class="text-2xl font-bold text-blue-400 mb-6">Destiny's Control Center</h1>
 
-    <section class="bg-gray-800 p-6 rounded-2xl mb-8 border border-blue-900">
+        <section class="bg-gray-800 p-6 rounded-2xl mb-8 border border-blue-900">
         <h2 class="text-lg font-bold mb-4">Post New Task</h2>
         <input type="text" id="taskTitle" placeholder="Task Name (e.g. Follow on IG)" class="w-full bg-gray-700 p-3 rounded-lg mb-3 outline-none">
+        
+        <input type="text" id="taskLink" placeholder="Task Link (https://...)" class="w-full bg-gray-700 p-3 rounded-lg mb-3 outline-none">
+        
         <input type="number" id="taskPrice" placeholder="Price in Naira (e.g. 10)" class="w-full bg-gray-700 p-3 rounded-lg mb-3 outline-none">
         <button onclick="addTask()" class="w-full bg-blue-600 p-3 rounded-lg font-bold">Post Task to Website</button>
     </section>
+
+    <script type="module">
+        // ... (inside your existing script) ...
+        window.addTask = () => {
+            const title = document.getElementById('taskTitle').value;
+            const link = document.getElementById('taskLink').value; // Get the link
+            const price = document.getElementById('taskPrice').value;
+            
+            if(title && link && price) {
+                const taskRef = push(ref(db, 'tasks'));
+                set(taskRef, { 
+                    title: title, 
+                    link: link,   // Save the link
+                    reward: price 
+                });
+                alert("Task Live!");
+                document.getElementById('taskTitle').value = "";
+                document.getElementById('taskLink').value = "";
+                document.getElementById('taskPrice').value = "";
+            } else {
+                alert("Please fill in all fields!");
+            }
+        };
+    </script>
+
 
     <section class="mb-8">
         <h2 class="text-lg font-bold mb-4 text-yellow-500">Pending Reviews</h2>
