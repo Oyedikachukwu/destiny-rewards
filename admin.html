@@ -3,112 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Destiny Rewards Admin</title>
+    <title>Destiny Rewards - Admin</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <style>
+        :root {
+            --primary-bg: #1a2a3a; /* Deep Blue */
+            --accent-green: #2ecc71; /* Emerald Green */
+            --text-light: #ffffff;
+            --card-bg: #ffffff;
+        }
+
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
-        
-        /* Mobile Friendly Header Menu */
-        .admin-nav { 
-            background: #2c3e50; 
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 50px; }
+
+        /* HEADER & NAVIGATION */
+        .admin-header { background: var(--primary-bg); color: white; padding: 20px 15px; text-align: center; }
+        .nav-bar { 
             display: flex; 
+            background: #243b55; 
             overflow-x: auto; 
             position: sticky; 
             top: 0; 
-            z-index: 100;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .admin-nav button {
-            flex: 0 0 auto;
+        .nav-bar button {
+            flex: 1;
+            min-width: 100px;
+            padding: 15px 5px;
             background: none;
             border: none;
-            color: white;
-            padding: 15px;
-            font-size: 14px;
-            white-space: nowrap;
+            color: #bdc3c7;
+            font-weight: bold;
             cursor: pointer;
+            font-size: 13px;
         }
-        .admin-nav button.active-btn { background: #34495e; border-bottom: 3px solid #27ae60; }
+        .nav-bar button.active { color: var(--accent-green); border-bottom: 3px solid var(--accent-green); }
 
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        
-        .section { display: none; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* CONTENT CONTAINERS */
+        .container { padding: 15px; max-width: 500px; margin: auto; }
+        .section { display: none; animation: fadeIn 0.3s ease; }
         .active-section { display: block; }
 
-        h2 { margin-top: 0; color: #333; font-size: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* FORMS & CARDS */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h2 { font-size: 18px; margin-top: 0; color: var(--primary-bg); }
         
-        .btn-main { background: #27ae60; color: white; border: none; width: 100%; padding: 15px; border-radius: 5px; font-weight: bold; font-size: 16px; }
-        .card { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
-        .btn-red { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; }
+        label { display: block; margin-bottom: 5px; font-size: 12px; color: #7f8c8d; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1.5px solid #ecf0f1; border-radius: 8px; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--accent-green); }
+
+        .btn-submit { background: var(--accent-green); color: white; border: none; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; }
+        .btn-approve { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 6px; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<div class="admin-nav">
-    <button id="btn1" class="active-btn" onclick="openTab('post-task', 'btn1')">➕ Post</button>
-    <button id="btn2" onclick="openTab('manage-tasks', 'btn2')">⚙️ Manage</button>
-    <button id="btn3" onclick="openTab('approvals', 'btn3')">✅ Approvals</button>
-    <button id="btn4" onclick="openTab('withdrawals', 'btn4')">💰 Payouts</button>
+<div class="admin-header">
+    <h1 style="margin:0; font-size: 22px;">Destiny Rewards</h1>
+    <p style="margin:5px 0 0; font-size: 12px; opacity: 0.8;">Admin Control Center</p>
+</div>
+
+<div class="nav-bar">
+    <button id="n1" class="active" onclick="showTab('post', 'n1')">POST</button>
+    <button id="n2" onclick="showTab('manage', 'n2')">MANAGE</button>
+    <button id="n3" onclick="showTab('approvals', 'n3')">APPROVALS</button>
+    <button id="n4" onclick="showTab('withdrawals', 'n4')">PAYOUTS</button>
 </div>
 
 <div class="container">
-    <div id="post-task" class="section active-section">
-        <h2>Post New Task</h2>
-        <label>Task Name</label>
-        <input type="text" id="tName" placeholder="e.g. Subscribe to YouTube">
-        
-        <label>Link/URL</label>
-        <input type="url" id="tLink" placeholder="https://...">
-        
-        <label>Reward Amount</label>
-        <input type="number" id="tReward" placeholder="0.50">
-        
-        <label>Max Persons (Limit)</label>
-        <input type="number" id="tLimit" placeholder="100">
-        
-        <button class="btn-main" onclick="saveTask()">Publish Task</button>
+    <div id="post" class="section active-section">
+        <div class="card">
+            <h2>Create New Task</h2>
+            <label>Task Name</label>
+            <input type="text" id="taskName" placeholder="YouTube Sub...">
+            <label>URL Link</label>
+            <input type="url" id="taskLink" placeholder="https://...">
+            <label>Reward ($)</label>
+            <input type="number" id="taskReward" placeholder="0.20">
+            <label>User Limit (Spots)</label>
+            <input type="number" id="taskLimit" placeholder="50">
+            <button class="btn-submit" onclick="postTask()">Push Task Live</button>
+        </div>
     </div>
 
-    <div id="manage-tasks" class="section">
+    <div id="manage" class="section">
         <h2>Active Tasks</h2>
-        <div id="taskList">Loading...</div>
+        <div id="taskList">Fetching...</div>
     </div>
 
     <div id="approvals" class="section">
-        <h2>Task Approvals</h2>
-        <div id="approvalList">No pending tasks.</div>
+        <h2>Review Task Proofs</h2>
+        <div id="proofList">No pending proofs.</div>
     </div>
 
     <div id="withdrawals" class="section">
         <h2>Withdrawal Requests</h2>
-        <div id="withdrawalList">No pending requests.</div>
+        <div id="payoutList">No pending payouts.</div>
     </div>
 </div>
 
 <script>
-    // --- 1. CONFIG (Paste your Firebase info here) ---
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT.firebaseapp.com",
         projectId: "YOUR_PROJECT_ID",
         storageBucket: "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "YOUR_ID",
+        messagingSenderId: "YOUR_SENDER_ID",
         appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- 2. TAB LOGIC ---
-    function openTab(sectionId, btnId) {
+    // --- TAB SWITCHER ---
+    function showTab(tabId, btnId) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
-        document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active-btn'));
-        document.getElementById(sectionId).classList.add('active-section');
-        document.getElementById(btnId).classList.add('active-btn');
+        document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active-section');
+        document.getElementById(btnId).classList.add('active');
     }
 
-    // --- 3. SAVE
-    
+    // --- POST TASK ---
+    function postTask() {
+        const name = document.getElementById('taskName').value;
+        const link = document.getElementById('taskLink').value;
+        const reward = document.getElementById('taskReward').value;
+        const limit = document.getElementById('taskLimit').value;
+
+        if(!name || !link) return alert("Fill all fields");
+
+        db.collection("tasks").add({
+            name: name,
+            link: link,
+            reward: parseFloat(reward),
+            limit: parseInt(limit),
+            completedCount: 0,
+            status: "active",
+            time: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            alert("Success!");
+            location.reload();
+        });
+    }
+
+    // --- MANAGE TASKS (REALTIME) ---
+    db.collection("tasks").orderBy("time", "desc").onSnapshot(snap => {
+        const container = document.getElementById('taskList');
+        container.innerHTML = "";
+        snap.forEach(doc => {
+            const data = doc.data();
+            container.innerHTML += `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>${data.name}</strong><br>
+                        <small>${data.completedCount}/${data.limit} users</small>
+                    </div>
+                    <button class="btn-delete" onclick="deleteTask('${doc.id}')">Delete</button>
+                </div>
+            `;
+        });
+    });
+
+    function deleteTask(id) {
+        if(confirm("Delete this task?")) db.collection("tasks").doc(id).delete();
+    }
+
+    // --- APPROVAL LOGIC (Placeholder for your submission collection) ---
+    db.collection("submissions").where("status", "==", "pending").onSnapshot(snap => {
+        const list = document.getElementById('proofList');
+        list.innerHTML = snap.empty ? "Clean slate!" : "";
+        snap.forEach(doc => {
+            const s = doc.data();
+            list.innerHTML += `
+                <div class="card">
+                    <p>User: ${s.userEmail}</p>
+                    <button class="btn-approve" onclick="updateStatus('submissions', '${doc.id}', 'approved')">Approve</button>
+                    <button class="btn-delete" onclick="updateStatus('submissions', '${doc.id}', 'rejected')">Reject</button>
+                </div>
+            `;
+        });
+    });
+
+    function updateStatus(collection, id, newStatus) {
+        db.collection(collection).doc(id).update({ status: newStatus });
+    }
+</script>
+</body>
+</html>
