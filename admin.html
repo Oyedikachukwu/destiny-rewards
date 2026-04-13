@@ -98,6 +98,20 @@
                 </div>`;
             }
         });
+        // Universal function to handle rejections
+function rejectRequest(path, requestId) {
+    const reason = prompt("Enter reason for rejection (optional):");
+    if (reason === null) return; // User cancelled
+
+    firebase.database().ref(path + '/' + requestId).update({
+        status: "Rejected",
+        adminNote: reason
+    }).then(() => {
+        alert("Request rejected.");
+        location.reload();
+    });
+}
+        
 
         window.delTask = (id) => { if(confirm("Delete?")) remove(ref(db, 'tasks/' + id)); };
 
