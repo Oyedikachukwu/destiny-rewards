@@ -88,7 +88,7 @@
 </div>
 
 <script>
-    const firebaseConfig = {
+        const firebaseConfig = {
         apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
         authDomain: "destiny-rewards.firebaseapp.com",
         databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
@@ -103,6 +103,15 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // --- TAB SWITCHER ---
+    function showTab(tabId, btnId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+        document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active-section');
+        document.getElementById(btnId).classList.add('active');
+    }
+
+    // --- POST TASK FUNCTION ---
     function postTask() {
         const name = document.getElementById('taskName').value;
         const link = document.getElementById('taskLink').value;
@@ -110,61 +119,51 @@
         const limit = document.getElementById('taskLimit').value;
 
         if(!name || !link || !reward || !limit) {
-            alert("⚠️ Please fill all fields!");
+            alert("Please fill all fields!");
             return;
         }
 
-        console.log("Attempting to post...");
+        const newTaskRef = database.ref('tasks').push();
         
-        // This is the direct path to your database
-        const taskRef = database.ref('tasks').push();
-        
-        taskRef.set({
+        // We save it under multiple names so the website finds it easily
+        newTaskRef.set({
             name: name,
+            taskName: name,
+            title: name,
             link: link,
             reward: reward,
             limit: limit,
             completedCount: 0,
-            id: taskRef.key,
-            status: "active"
-        })
-        .then(() => {
-            alert("🚀 SUCCESS! Task is live.");
-            document.getElementById('taskName').value = "";
-            document.getElementById('taskLink').value = "";
-        })
-        .catch((error) => {
-            console.error(error);
-            alert("❌ FAILED: " + error.message + "\n\nCheck your Firebase Rules!");
-        });
+            status: "active",
+            id: newTaskRef.key
+        }).then(() => {
+            alert("🚀 Task Successfully Posted!");
+            location.reload(); 
+        }).catch(err => alert("Error: " + err.message));
     }
 
-    // Load Tasks for the Manage Tab
+    // --- MANAGE TASKS (REAL-TIME LIST) ---
     database.ref('tasks').on('value', (snapshot) => {
         const list = document.getElementById('taskList');
         list.innerHTML = "";
-        if (!snapshot.exists()) {
-            list.innerHTML = "No active tasks found.";
-            return;
-        }
         snapshot.forEach((child) => {
             const task = child.val();
             list.innerHTML += `
                 <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${task.name}</strong><br><small>Limit: ${task.limit}</small></div>
+                    <div>
+                        <strong>${task.name || task.title}</strong><br>
+                        <small>Limit: ${task.limit} persons</small>
+                    </div>
                     <button class="btn-delete" onclick="deleteTask('${child.key}')">Remove</button>
-                </div>`;
+                </div>
+            `;
         });
     });
 
     function deleteTask(id) {
-        if(confirm("Remove this task?")) database.ref('tasks/' + id).remove();
+        if(confirm("Are you sure you want to remove this task?")) {
+            database.ref('tasks/' + id).remove();
+        }
     }
 
-    function showTab(tabId, btnId) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
-        document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active-section');
-        document.getElementById(btnId).classList.add('active');
-    }
 </script>
