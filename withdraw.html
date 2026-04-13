@@ -3,35 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdraw | Destiny Rewards</title>
+    <title>Withdraw - Destiny Rewards</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-white pb-24">
-    <div class="p-6 text-center bg-gray-800 border-b border-gray-700">
-        <h1 class="text-xl font-bold">Withdraw Funds</h1>
-    </div>
+<body class="bg-black text-white">
 
-    <main class="p-6 space-y-4">
+    <div class="p-6 space-y-4">
         <div class="bg-blue-900/20 p-6 rounded-3xl text-center border border-blue-500/30">
-            <p class="text-xs text-blue-400 font-bold uppercase">Balance</p>
+            <p class="text-xs text-blue-400 font-bold uppercase">Your Balance</p>
             <h2 id="currentBalance" class="text-4xl font-black mt-2">₦0</h2>
         </div>
 
-        <input type="number" id="wAmount" placeholder="Amount (Min ₦100)" class="w-full bg-gray-800 p-4 rounded-2xl outline-none border border-gray-700">
-        <input type="text" id="wBank" placeholder="Bank Name (e.g. OPay)" class="w-full bg-gray-800 p-4 rounded-2xl outline-none border border-gray-700">
-        <input type="number" id="wAcc" placeholder="Account Number" class="w-full bg-gray-800 p-4 rounded-2xl outline-none border border-gray-700">
-        <input type="text" id="wName" placeholder="Account Holder Name" class="w-full bg-gray-800 p-4 rounded-2xl outline-none border border-gray-700">
+        <div class="space-y-3">
+            <input type="number" id="wAmount" placeholder="Amount (Min ₦100)" class="w-full bg-gray-900 p-4 rounded-xl text-white border border-gray-800 focus:outline-none focus:border-blue-500">
+            <input type="text" id="wBank" placeholder="Bank Name (e.g. OPay)" class="w-full bg-gray-900 p-4 rounded-xl text-white border border-gray-800 focus:outline-none focus:border-blue-500">
+            <input type="number" id="wAcc" placeholder="Account Number" class="w-full bg-gray-900 p-4 rounded-xl text-white border border-gray-800 focus:outline-none focus:border-blue-500">
+            <input type="text" id="wName" placeholder="Account Holder Name" class="w-full bg-gray-900 p-4 rounded-xl text-white border border-gray-800 focus:outline-none focus:border-blue-500">
+            
+            <button onclick="submitWithdraw()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-white hover:bg-blue-700 transition">Submit Withdrawal</button>
+        </div>
 
-        <button onclick="submitWithdraw()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase shadow-lg">Confirm Withdrawal</button>
-    </main>
+        <hr class="border-gray-800 my-6">
+
+        <div>
+            <h3 class="text-xl font-bold mb-4">Withdrawal History</h3>
+            <div id="history-list" class="space-y-3">
+                <p class="text-gray-500 text-sm">Loading history...</p>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, get, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, set, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDQXpPMNetnZPNJ7k3ywpejfNxCeGYxKZA",
+            apiKey: "AIzaSyDQXpPNnetnZPNJ7k3ympejfNxCeGYxKZA",
             authDomain: "destiny-rewards.firebaseapp.com",
             databaseURL: "https://destiny-rewards-default-rtdb.firebaseio.com",
             projectId: "destiny-rewards",
@@ -47,11 +55,40 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                // Real-time Balance Update
                 onValue(ref(db, 'users/' + user.uid), (snap) => {
-                    userBalance = snap.val() ? snap.val().balance || 0 : 0;
+                    userBalance = snap.val()?.balance || 0;
                     document.getElementById('currentBalance').innerText = "₦" + userBalance;
                 });
-            } else { window.location.href = "index.html"; }
+
+                // Real-time History Update (Filters for this user)
+                const historyRef = query(ref(db, 'withdrawals'), orderByChild('uid'), equalTo(user.uid));
+                onValue(historyRef, (snapshot) => {
+                    const list = document.getElementById('history-list');
+                    list.innerHTML = "";
+                    if (!snapshot.exists()) {
+                        list.innerHTML = "<p class='text-gray-600'>No transactions yet.</p>";
+                        return;
+                    }
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        let statusColor = "text-yellow-500"; // Default: Pending
+                        if (data.status === "Paid") statusColor = "text-green-500";
+                        if (data.status === "Rejected") statusColor = "text-red-500";
+
+                        list.innerHTML += `
+                            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold">₦${data.amount}</p>
+                                    <p class="text-xs text-gray-500">${data.bank}</p>
+                                </div>
+                                <span class="${statusColor} font-black text-xs uppercase">${data.status || 'Pending'}</span>
+                            </div>`;
+                    });
+                });
+            } else {
+                window.location.href = "index.html";
+            }
         });
 
         window.submitWithdraw = async () => {
@@ -59,19 +96,28 @@
             const bank = document.getElementById('wBank').value;
             const acc = document.getElementById('wAcc').value;
             const name = document.getElementById('wName').value;
-
-            if(!amount || !bank || !acc || !name) { alert("Fill all details!"); return; }
-            if(amount < 100) { alert("Min ₦100"); return; }
-            if(amount > userBalance) { alert("Insufficient funds!"); return; }
-
             const user = auth.currentUser;
-            const wRef = push(ref(db, 'withdrawals'));
-            await set(wRef, {
-                uid: user.uid, email: user.email, amount, bank, accountNumber: acc, accountName: name, status: "pending", date: new Date().toLocaleDateString()
+
+            if (!amount || !bank || !acc || !name) return alert("Please fill all fields!");
+            if (amount < 100) return alert("Minimum withdrawal is ₦100");
+            if (amount > userBalance) return alert("Insufficient balance!");
+
+            const newWithdrawRef = push(ref(db, 'withdrawals'));
+            await set(newWithdrawRef, {
+                uid: user.uid,
+                email: user.email,
+                amount: amount,
+                bank: bank,
+                accountNumber: acc,
+                accountName: name,
+                status: "Pending", // Forces status to show as pending initially
+                timestamp: Date.now()
             });
+
+            // Deduct balance immediately
             await set(ref(db, 'users/' + user.uid + '/balance'), userBalance - amount);
-            alert("Request Sent!");
-            window.location.href = "dashboard.html";
+            alert("Withdrawal request submitted!");
+            document.getElementById('wAmount').value = "";
         };
     </script>
 </body>
