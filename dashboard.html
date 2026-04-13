@@ -100,26 +100,34 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Telegram Lock Logic
-        window.unlockSite = () => {
-            document.getElementById('tgLock').classList.add('hidden');
-            localStorage.setItem('tgJoined', 'true');
+        // --- TELEGRAM UNLOCK LOGIC ---
+        // We put this outside the "onAuthStateChanged" so it works instantly
+        window.unlockSite = function() {
+            const lock = document.getElementById('tgLock');
+            if (lock) {
+                lock.style.display = 'none'; // This forces it to disappear
+                localStorage.setItem('tgJoined', 'true');
+            }
         };
 
+        // Check on page load
         if(localStorage.getItem('tgJoined') === 'true') {
-            document.getElementById('tgLock').classList.add('hidden');
+            document.getElementById('tgLock').style.display = 'none';
         }
 
+        // --- MAIN APP LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('userEmail').innerText = user.email;
-                document.getElementById('refLink').innerText = window.location.origin + "/index.html?ref=" + user.uid;
+                document.getElementById('refLink').innerText = window.location.origin + window.location.pathname + "?ref=" + user.uid;
                 onValue(ref(db, 'users/' + user.uid), (snap) => {
                     const data = snap.val();
                     document.getElementById('mainBalance').innerText = "₦" + (data ? data.balance || 0 : 0);
                 });
                 loadTasks(user.uid);
-            } else { window.location.href = "index.html"; }
+            } else { 
+                window.location.href = "index.html"; 
+            }
         });
 
         function loadTasks(uid) {
@@ -127,13 +135,62 @@
                 const tasks = snap.val();
                 const list = document.getElementById('taskList');
                 list.innerHTML = "";
-                if(!tasks) { list.innerHTML = "<p class='text-center text-gray-600 py-10'>No tasks available yet.</p>"; return; }
+                if(!tasks) { 
+                    list.innerHTML = "<p class='text-center text-gray-600 py-10'>No tasks available yet.</p>"; 
+                    return; 
+                }
                 for (let id in tasks) {
                     list.innerHTML += `
-                        <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex justify-between items-center shadow-md">
+                        <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex justify-between items-center shadow-md mb-4">
                             <div>
                                 <h3 class="font-bold text-gray-100">${tasks[id].title}</h3>
                                 <p class="text-blue-400 font-bold">₦${tasks[id].reward}</p>
                             </div>
-                            <button
-        
+                            <button onclick="submitTask('${id}', '${tasks[id].reward}')" class="bg-white text-black px-5 py-2 rounded-xl text-xs font-black uppercase">Start</button>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        window.submitTask = (id, reward) => {
+            const proof = prompt("Enter your username/proof for this task:");
+            if(proof) {
+                set(ref(db, `submissions/${auth.currentUser.uid}/${id}`), {
+                    proof, reward, status: "pending", userEmail: auth.currentUser.email, date: new Date().toLocaleDateString()
+                });
+                alert("Submitted for review!");
+            }
+        };
+
+        window.copyRef = () => {
+            const link = document.getElementById('refLink').innerText;
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Referral link copied!");
+            });
+        };
+
+        window.requestWithdrawal = async () => {
+            const user = auth.currentUser;
+            const snapshot = await get(ref(db, 'users/' + user.uid));
+            const balance = snapshot.val() ? snapshot.val().balance || 0 : 0;
+
+            if (balance < 100) {
+                alert("You need at least ₦100 to withdraw.");
+            } else {
+                const bankDetails = prompt("Enter your Bank Name and Account Number:");
+                if (bankDetails) {
+                    const newWithdrawalRef = push(ref(db, 'withdrawals'));
+                    await set(newWithdrawalRef, {
+                        uid: user.uid,
+                        email: user.email,
+                        amount: balance,
+                        details: bankDetails,
+                        status: "pending"
+                    });
+                    await set(ref(db, 'users/' + user.uid + '/balance'), 0);
+                    alert("Withdrawal request sent!");
+                }
+            }
+        };
+    </script>
